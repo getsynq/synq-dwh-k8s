@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synq-dwh-deployment
+spec:
+  template:
+    spec:
+      containers:
+        - name: synq-dwh-container
+          image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.2.0
+          imagePullPolicy: IfNotPresent

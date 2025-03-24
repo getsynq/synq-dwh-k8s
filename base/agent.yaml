@@ -1,0 +1,4 @@
+synq:
+  client_id: ${SYNQ_CLIENT_ID}
+  client_secret: ${SYNQ_CLIENT_SECRET}
+connections: {}

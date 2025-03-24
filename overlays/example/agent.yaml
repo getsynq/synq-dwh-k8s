@@ -1,0 +1,10 @@
+connections:
+  "postgres":
+    name: "PostgreSQL"
+    postgres:
+      host: localhost
+      port: 54320
+      username: postgres
+      password: ${POSTGRES_PASSWORD}
+      database: db
+      allow_insecure: true

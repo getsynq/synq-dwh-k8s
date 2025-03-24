@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synq-dwh-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: synq-dwh
+  template:
+    metadata:
+      labels:
+        deployment: synq-dwh
+    spec:
+      containers:
+        - name: synq-dwh-container
+          image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: synq-dwh-agent-env
+          volumeMounts:
+            - name: synq-dwh-agent-config-volume
+              mountPath: /opt/synq-dwh/
+      volumes:
+        - name: synq-dwh-agent-config-volume
+          configMap:
+            name: synq-dwh-agent-config

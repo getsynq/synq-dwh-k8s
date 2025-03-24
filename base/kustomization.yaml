@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+configMapGenerator:
+  - files:
+      - agent.yaml
+    name: synq-dwh-agent-config
+secretGenerator:
+  - envs:
+      - agent.env
+    name: synq-dwh-agent-env
+namespace: synq
