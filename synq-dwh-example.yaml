@@ -13,7 +13,7 @@ data:
           allow_insecure: true
 kind: ConfigMap
 metadata:
-  name: example-synq-dwh-agent-config-m5ht2t5bbc
+  name: example-synq-dwh-agent-config
   namespace: synq
 ---
 apiVersion: v1
@@ -23,7 +23,7 @@ data:
   SYNQ_CLIENT_SECRET: ZXhhbXBsZS1jbGllbnQtc2VjcmV0LWZyb20tc3lucQ==
 kind: Secret
 metadata:
-  name: example-synq-dwh-agent-env-md2774hbc2
+  name: example-synq-dwh-agent-env
   namespace: synq
 type: Opaque
 ---
@@ -45,7 +45,7 @@ spec:
       containers:
       - envFrom:
         - secretRef:
-            name: example-synq-dwh-agent-env-md2774hbc2
+            name: example-synq-dwh-agent-env
         image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.2.0
         imagePullPolicy: IfNotPresent
         name: synq-dwh-container
@@ -54,5 +54,5 @@ spec:
           name: synq-dwh-agent-config-volume
       volumes:
       - configMap:
-          name: example-synq-dwh-agent-config-m5ht2t5bbc
+          name: example-synq-dwh-agent-config
         name: synq-dwh-agent-config-volume
