@@ -5,7 +5,8 @@
 
 services:
   synq-dwh:
-    image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:latest
+    image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.1.0
+    pull_policy: always
     platform: linux/amd64
     environment:
       POSTGRES_PASSWORD: pass

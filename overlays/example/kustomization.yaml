@@ -15,8 +15,5 @@ resources:
   - ../../base
 namespace: synq
 
-patches:
-  - path: patch-version.yaml
-
 generatorOptions:
   disableNameSuffixHash: true
