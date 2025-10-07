@@ -11,10 +11,10 @@ If you're already familiar with Kubernetes and want to deploy quickly:
 
 ```bash
 # Using Kustomize (Recommended)
-kubectl apply -k k8s/overlays/example
+kubectl apply -k overlays/example
 
 # OR using direct deployment
-kubectl apply -f k8s/synq-dwh-example.yaml
+kubectl apply -f synq-dwh-example.yaml
 ```
 
 ## Prerequisites
@@ -22,8 +22,7 @@ kubectl apply -f k8s/synq-dwh-example.yaml
 Before you begin, ensure you have:
 
 - ✅ Kubernetes cluster access configured
-- ✅ `kubectl` CLI tool installed
-- ✅ `kustomize` installed (if using Kustomize approach)
+- ✅ `kubectl` CLI tool installed (v1.14+ with built-in kustomize support)
 - ✅ Access to the container registry where the images are stored
 
 ## Project Structure
@@ -47,23 +46,19 @@ Kustomize provides better environment management and configuration customization
 
 1. **Review Base Configuration**
 
-   - Navigate to `k8s/base/`
+   - Navigate to `base/`
    - Review and modify configurations as needed
    - Pay special attention to resource limits and environment variables
 
 2. **Environment Setup**
 
-   - Choose an existing environment overlay from `k8s/overlays/`
+   - Choose an existing environment overlay from `overlays/`
    - Or create a new one by copying the `example` directory
 
 3. **Deploy**
 
    ```bash
-   # Using kubectl with built-in kustomize
-   kubectl apply -k k8s/overlays/example
-
-   # OR using standalone kustomize (for older kubectl versions)
-   kustomize build k8s/overlays/example | kubectl apply -f -
+   kubectl apply -k overlays/example
    ```
 
 ### 2. Direct Deployment Using kubectl
@@ -71,7 +66,7 @@ Kustomize provides better environment management and configuration customization
 For simpler deployments without environment-specific configurations:
 
 ```bash
-kubectl apply -f k8s/synq-dwh-example.yaml
+kubectl apply -f synq-dwh-example.yaml
 ```
 
 ⚠️ **Note**: When using direct deployment, you'll need to manually redeploy when configuration changes as checksums won't update automatically.
@@ -97,15 +92,40 @@ kubectl logs -l app=synq-dwh
 
 Environment variables are managed in two places:
 
-- Base configuration: `k8s/base/.env`
+- Base configuration: `base/agent.env`
 - Environment-specific variables: Located in respective overlay directories
 
 ### Resource Configuration
 
 Resource limits and requests can be adjusted in:
 
-- Base deployment: `k8s/base/deployment.yaml`
+- Base deployment: `base/deployment.yaml`
 - Environment-specific: In respective overlay's patch files
+
+### Container Image Auto-Updates
+
+We recommend using an auto-update tool to keep your SYNQ DWH deployment current with the latest container versions. The agent deployment includes annotations to work with [Keel.sh](https://keel.sh/docs/) by default:
+
+```yaml
+annotations:
+  keel.sh/policy: minor
+  keel.sh/trigger: poll
+  keel.sh/pollSchedule: "@every 5m"
+```
+
+#### Keel.sh (Recommended)
+- **Simple setup**: Deploy as a single Kubernetes deployment
+- **Annotation-based**: Configure updates directly in deployment manifests
+- **Flexible policies**: Support for major, minor, patch, and force update policies
+- **Multiple triggers**: Poll, webhook, and approval-based updates
+
+#### Alternative Auto-Update Tools
+
+**GitOps-Based Solutions:**
+- **FluxCD with Image Automation**: Automatically updates Git repositories when new images are available, following GitOps principles
+- **ArgoCD Image Updater**: Updates ArgoCD applications with new container images while maintaining Git-based configuration
+
+Choose based on your workflow: GitOps-based solutions (FluxCD/ArgoCD) for production environments with full Git-based configuration management.
 
 ## Troubleshooting Guide
 
@@ -135,10 +155,10 @@ To remove the deployment:
 
 ```bash
 # Using Kustomize
-kustomize build k8s/overlays/example | kubectl delete -f -
+kubectl delete -k overlays/example
 
 # OR direct deployment
-kubectl delete -f k8s/synq-dwh-example.yaml
+kubectl delete -f synq-dwh-example.yaml
 ```
 
 ## Need Help?

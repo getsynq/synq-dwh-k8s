@@ -1,1 +1,1 @@
-kustomize build overlays/example > synq-dwh-example.yaml
+kubectl kustomize overlays/example > synq-dwh-example.yaml
