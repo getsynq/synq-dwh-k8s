@@ -5,7 +5,7 @@
 
 services:
   synq-dwh:
-    image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.1.0
+    image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:latest
     pull_policy: always
     platform: linux/amd64
     environment:

@@ -30,6 +30,10 @@ type: Opaque
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    keel.sh/policy: minor
+    keel.sh/pollSchedule: '@every 5m'
+    keel.sh/trigger: poll
   name: example-synq-dwh-deployment
   namespace: synq
 spec:
@@ -46,7 +50,7 @@ spec:
       - envFrom:
         - secretRef:
             name: example-synq-dwh-agent-env
-        image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.1.0
+        image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.4.0
         imagePullPolicy: Always
         name: synq-dwh-container
         volumeMounts:
