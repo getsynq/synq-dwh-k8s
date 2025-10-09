@@ -50,7 +50,7 @@ spec:
       - envFrom:
         - secretRef:
             name: example-synq-dwh-agent-env
-        image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.4.0
+        image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.4.1
         imagePullPolicy: Always
         name: synq-dwh-container
         volumeMounts:

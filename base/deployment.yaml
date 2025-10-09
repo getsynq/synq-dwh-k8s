@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: synq-dwh-container
-          image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.4.0
+          image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.4.1
           imagePullPolicy: Always
           envFrom:
             - secretRef:
