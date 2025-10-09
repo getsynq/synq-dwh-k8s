@@ -100,7 +100,8 @@ jobs:
           --method POST \
           --field state="success" \
           --field context="Validate image version" \
-          --field description="Image version validated successfully"
+          --field description="Image version validated successfully" \
+          --field target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
     - name: Validate kustomize build
       if: steps.check_version.outputs.should_update == 'true'
       id: validate_kustomize
@@ -115,5 +116,6 @@ jobs:
         gh api repos/${{ github.repository }}/statuses/${{ steps.pr_sha.outputs.sha }} \
           --method POST \
           --field state="success" \
-          --field context="Validate Kustomize build" \
-          --field description="Kustomize build validated successfully"
+          --field context="Validate Kustomize build (example)" \
+          --field description="Kustomize build validated successfully" \
+          --field target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
