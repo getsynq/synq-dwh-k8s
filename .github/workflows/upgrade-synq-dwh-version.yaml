@@ -86,17 +86,23 @@ jobs:
       run: |
         chmod +x scripts/validate-kustomize-build.sh
         ./scripts/validate-kustomize-build.sh example
-    - name: Auto-merge PR (admin override)
+    - name: Add validation status comment to PR
       if: steps.check_version.outputs.should_update == 'true'
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "==> All validations passed, merging PR with admin override"
+        echo "==> All validations passed, adding comment to PR"
         PR_NUMBER=$(gh pr list --head auto-versions/synq-dwh-image --json number --jq '.[0].number')
         if [ -n "$PR_NUMBER" ]; then
-          gh pr merge "$PR_NUMBER" --squash --delete-branch --admin
-          echo "==> PR #$PR_NUMBER merged successfully"
+          gh pr comment "$PR_NUMBER" --body "$(cat <<'COMMENT'
+        ✅ All validations passed in upgrade workflow:
+        - Image version validated
+        - Kustomize build successful
+
+        This PR is ready to merge.
+        COMMENT
+        )"
+          echo "==> Added comment to PR #$PR_NUMBER"
         else
-          echo "ERROR: Could not find PR for branch auto-versions/synq-dwh-image"
-          exit 1
+          echo "WARNING: Could not find PR for branch auto-versions/synq-dwh-image"
         fi
