@@ -76,33 +76,44 @@ jobs:
         delete-branch: true
         labels: deployment,automation
         title: 'Upgrade synq-dwh image to ${{ steps.check_version.outputs.new_version }}'
+    - name: Get PR head SHA
+      if: steps.check_version.outputs.should_update == 'true'
+      id: pr_sha
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        PR_SHA=$(gh pr list --head auto-versions/synq-dwh-image --json headRefOid --jq '.[0].headRefOid')
+        echo "sha=$PR_SHA" >> $GITHUB_OUTPUT
+        echo "PR SHA: $PR_SHA"
     - name: Validate image version
       if: steps.check_version.outputs.should_update == 'true'
+      id: validate_image
       run: |
         chmod +x scripts/validate-image-version.sh
         ./scripts/validate-image-version.sh
-    - name: Validate kustomize build
-      if: steps.check_version.outputs.should_update == 'true'
-      run: |
-        chmod +x scripts/validate-kustomize-build.sh
-        ./scripts/validate-kustomize-build.sh example
-    - name: Add validation status comment to PR
+    - name: Set image validation status
       if: steps.check_version.outputs.should_update == 'true'
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "==> All validations passed, adding comment to PR"
-        PR_NUMBER=$(gh pr list --head auto-versions/synq-dwh-image --json number --jq '.[0].number')
-        if [ -n "$PR_NUMBER" ]; then
-          gh pr comment "$PR_NUMBER" --body "$(cat <<'COMMENT'
-        ✅ All validations passed in upgrade workflow:
-        - Image version validated
-        - Kustomize build successful
-
-        This PR is ready to merge.
-        COMMENT
-        )"
-          echo "==> Added comment to PR #$PR_NUMBER"
-        else
-          echo "WARNING: Could not find PR for branch auto-versions/synq-dwh-image"
-        fi
+        gh api repos/${{ github.repository }}/statuses/${{ steps.pr_sha.outputs.sha }} \
+          --method POST \
+          --field state="success" \
+          --field context="Validate image version" \
+          --field description="Image version validated successfully"
+    - name: Validate kustomize build
+      if: steps.check_version.outputs.should_update == 'true'
+      id: validate_kustomize
+      run: |
+        chmod +x scripts/validate-kustomize-build.sh
+        ./scripts/validate-kustomize-build.sh example
+    - name: Set kustomize validation status
+      if: steps.check_version.outputs.should_update == 'true'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh api repos/${{ github.repository }}/statuses/${{ steps.pr_sha.outputs.sha }} \
+          --method POST \
+          --field state="success" \
+          --field context="Validate Kustomize build" \
+          --field description="Kustomize build validated successfully"
