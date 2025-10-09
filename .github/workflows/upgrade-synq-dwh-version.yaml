@@ -76,3 +76,27 @@ jobs:
         delete-branch: true
         labels: deployment,automation
         title: 'Upgrade synq-dwh image to ${{ steps.check_version.outputs.new_version }}'
+    - name: Validate image version
+      if: steps.check_version.outputs.should_update == 'true'
+      run: |
+        chmod +x scripts/validate-image-version.sh
+        ./scripts/validate-image-version.sh
+    - name: Validate kustomize build
+      if: steps.check_version.outputs.should_update == 'true'
+      run: |
+        chmod +x scripts/validate-kustomize-build.sh
+        ./scripts/validate-kustomize-build.sh example
+    - name: Auto-merge PR (admin override)
+      if: steps.check_version.outputs.should_update == 'true'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "==> All validations passed, merging PR with admin override"
+        PR_NUMBER=$(gh pr list --head auto-versions/synq-dwh-image --json number --jq '.[0].number')
+        if [ -n "$PR_NUMBER" ]; then
+          gh pr merge "$PR_NUMBER" --squash --delete-branch --admin
+          echo "==> PR #$PR_NUMBER merged successfully"
+        else
+          echo "ERROR: Could not find PR for branch auto-versions/synq-dwh-image"
+          exit 1
+        fi
