@@ -88,6 +88,19 @@ kubectl logs -l app=synq-dwh
 
 ## Configuration Guide
 
+### Agent Configuration (`agent.yaml`)
+
+The agent is configured via `agent.yaml` files located in each overlay directory. The configuration schema is documented at:
+
+- **Schema documentation**: https://schemas.synq.io/synq-dwh/v1/config.html
+- **JSON Schema**: https://schemas.synq.io/synq-dwh/v1/config.schema.json
+
+To enable autocompletion and validation in your editor, add this comment at the top of your `agent.yaml`:
+
+```yaml
+# yaml-language-server: $schema=https://schemas.synq.io/synq-dwh/v1/config.schema.json
+```
+
 ### Environment Variables
 
 Environment variables are managed in two places:
