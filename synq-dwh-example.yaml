@@ -20,8 +20,8 @@ metadata:
 apiVersion: v1
 data:
   POSTGRES_PASSWORD: cGFzcw==
-  SYNQ_CLIENT_ID: ZXhhbXBsZS1jbGllbnQtaWQtZnJvbS1zeW5x
-  SYNQ_CLIENT_SECRET: ZXhhbXBsZS1jbGllbnQtc2VjcmV0LWZyb20tc3lucQ==
+  QUALITY_CLIENT_ID: ZXhhbXBsZS1jbGllbnQtaWQ=
+  QUALITY_CLIENT_SECRET: ZXhhbXBsZS1jbGllbnQtc2VjcmV0
 kind: Secret
 metadata:
   name: example-synq-dwh-agent-env

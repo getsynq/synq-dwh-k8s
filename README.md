@@ -108,6 +108,11 @@ Environment variables are managed in two places:
 - Base configuration: `base/agent.env`
 - Environment-specific variables: Located in respective overlay directories
 
+The agent authenticates with `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET`,
+created under Settings → API in your workspace. The older `SYNQ_CLIENT_ID` and
+`SYNQ_CLIENT_SECRET` are still read, so an existing deployment does not have to
+change; new ones should use the names above.
+
 ### Resource Configuration
 
 Resource limits and requests can be adjusted in:
