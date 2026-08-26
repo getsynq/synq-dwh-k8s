@@ -1,6 +1,6 @@
-# SYNQ DWH Kubernetes Deployment Guide
+# Coalesce Quality data warehouse agent — Kubernetes deployment guide
 
-This guide provides step-by-step instructions for deploying the SYNQ DWH service on Kubernetes. You can choose between two deployment methods:
+This guide provides step-by-step instructions for deploying the Coalesce Quality data warehouse agent on Kubernetes. You can choose between two deployment methods:
 
 1. **Recommended**: Using Kustomize (for better environment management and configuration)
 2. Direct deployment using kubectl
@@ -117,7 +117,7 @@ Resource limits and requests can be adjusted in:
 
 ### Container Image Auto-Updates
 
-We recommend using an auto-update tool to keep your SYNQ DWH deployment current with the latest container versions. The agent deployment includes annotations to work with [Keel.sh](https://keel.sh/docs/) by default:
+We recommend using an auto-update tool to keep your agent deployment current with the latest container versions. The agent deployment includes annotations to work with [Keel.sh](https://keel.sh/docs/) by default:
 
 ```yaml
 annotations:
@@ -180,4 +180,4 @@ If you encounter any issues or need assistance:
 
 1. Check the troubleshooting section above
 2. Review the logs using `kubectl logs`
-3. Contact the SYNQ team for support
+3. Contact Coalesce Quality support: https://docs.synq.io/support/support

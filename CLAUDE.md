@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This repository contains Kubernetes deployment configurations for the SYNQ DWH service. It uses Kustomize for managing environment-specific configurations with a base/overlays pattern.
+This repository contains Kubernetes deployment configurations for the Coalesce Quality data warehouse agent. It uses Kustomize for managing environment-specific configurations with a base/overlays pattern.
 
 ## Architecture
 
