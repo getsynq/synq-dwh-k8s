@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://schemas.synq.io/synq-dwh/v1/config.schema.json
 synq:
-  client_id: ${SYNQ_CLIENT_ID}
-  client_secret: ${SYNQ_CLIENT_SECRET}
+  client_id: ${QUALITY_CLIENT_ID}
+  client_secret: ${QUALITY_CLIENT_SECRET}
 connections: {}

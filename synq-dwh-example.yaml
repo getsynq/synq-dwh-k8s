@@ -1,6 +1,7 @@
 apiVersion: v1
 data:
   agent.yaml: |
+    # yaml-language-server: $schema=https://schemas.synq.io/synq-dwh/v1/config.schema.json
     connections:
       "postgres":
         name: "PostgreSQL"
@@ -19,8 +20,8 @@ metadata:
 apiVersion: v1
 data:
   POSTGRES_PASSWORD: cGFzcw==
-  SYNQ_CLIENT_ID: ZXhhbXBsZS1jbGllbnQtaWQtZnJvbS1zeW5x
-  SYNQ_CLIENT_SECRET: ZXhhbXBsZS1jbGllbnQtc2VjcmV0LWZyb20tc3lucQ==
+  QUALITY_CLIENT_ID: ZXhhbXBsZS1jbGllbnQtaWQ=
+  QUALITY_CLIENT_SECRET: ZXhhbXBsZS1jbGllbnQtc2VjcmV0
 kind: Secret
 metadata:
   name: example-synq-dwh-agent-env
@@ -50,7 +51,7 @@ spec:
       - envFrom:
         - secretRef:
             name: example-synq-dwh-agent-env
-        image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.4.1
+        image: europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh:v0.6.0
         imagePullPolicy: Always
         name: synq-dwh-container
         volumeMounts:
