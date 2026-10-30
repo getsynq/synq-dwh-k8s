@@ -1,122 +1,109 @@
-# Coalesce Quality data warehouse agent — Kubernetes deployment guide
+# Coalesce Quality data warehouse agent on Kubernetes
 
-This guide provides step-by-step instructions for deploying the Coalesce Quality data warehouse agent on Kubernetes. You can choose between two deployment methods:
+This repository deploys the Coalesce Quality data warehouse agent on Kubernetes. The agent connects to your data warehouses. It reads schemas and metrics and runs monitors for Coalesce Quality.
 
-1. **Recommended**: Using Kustomize (for better environment management and configuration)
-2. Direct deployment using kubectl
+You can deploy the agent in two ways:
 
-## Quick Start
+1. With Kustomize, from an overlay in `overlays/`. We recommend this method.
+2. With `kubectl apply` and the generated `synq-dwh-example.yaml` file.
 
-If you're already familiar with Kubernetes and want to deploy quickly:
+## Quick start
 
 ```bash
-# Using Kustomize (Recommended)
+# With Kustomize
 kubectl apply -k overlays/example
 
-# OR using direct deployment
+# OR with the generated file
 kubectl apply -f synq-dwh-example.yaml
 ```
+
+The `example` overlay connects to a test PostgreSQL database and uses example credentials. Change both before you use it.
 
 ## Prerequisites
 
-Before you begin, ensure you have:
+- Access to a Kubernetes cluster.
+- `kubectl` v1.14 or later, which includes Kustomize.
+- API credentials from Coalesce Quality. Create them under Settings → API in your workspace.
 
-- ✅ Kubernetes cluster access configured
-- ✅ `kubectl` CLI tool installed (v1.14+ with built-in kustomize support)
-- ✅ Access to the container registry where the images are stored
+The agent image is public, so you do not need registry credentials.
 
-## Project Structure
+## Repository layout
 
 ```
 synq-dwh-k8s/
-├── base/                  # Base Kubernetes configurations
-│   ├── deployment.yaml    # Main deployment configuration
-│   ├── kustomization.yaml # Base kustomization file
-│   ├── agent.yaml        # Agent configuration
-│   └── agent.env         # Environment variables, store secrets here
-└── overlays/             # Environment-specific overlays
-    └── example/          # Example environment configuration
+├── base/                  # Resources that all overlays share
+│   ├── deployment.yaml    # The agent deployment
+│   ├── kustomization.yaml # Generates the ConfigMap and the Secret
+│   ├── agent.yaml         # Default agent configuration
+│   └── agent.env          # Default environment variables
+├── overlays/
+│   └── example/           # Example overlay, copy it for your own environment
+└── synq-dwh-example.yaml  # The example overlay, built into one file
 ```
 
-## Detailed Deployment Instructions
+## Deploy with Kustomize
 
-### 1. Using Kustomize (Recommended)
-
-Kustomize provides better environment management and configuration customization:
-
-1. **Review Base Configuration**
-
-   - Navigate to `base/`
-   - Review and modify configurations as needed
-   - Pay special attention to resource limits and environment variables
-
-2. **Environment Setup**
-
-   - Choose an existing environment overlay from `overlays/`
-   - Or create a new one by copying the `example` directory
-
-3. **Deploy**
+1. Copy `overlays/example` to a new directory, for example `overlays/production`.
+2. In the new `agent.env`, set `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET`.
+3. In the new `agent.env`, add the passwords and keys that your connections use.
+4. In the new `agent.yaml`, define your connections. See [Agent configuration](#agent-configuration).
+5. Deploy the overlay:
 
    ```bash
-   kubectl apply -k overlays/example
+   kubectl apply -k overlays/production
    ```
 
-### 2. Direct Deployment Using kubectl
+## Deploy with the generated file
 
-For simpler deployments without environment-specific configurations:
+`synq-dwh-example.yaml` is the `example` overlay, built into one file. Use it if you do not want to use Kustomize.
+
+1. Edit the ConfigMap and the Secret in `synq-dwh-example.yaml`.
+2. Deploy the file:
+
+   ```bash
+   kubectl apply -f synq-dwh-example.yaml
+   ```
+
+To build the file again from the overlay, run `./build.sh`.
+
+## Verify the deployment
 
 ```bash
-kubectl apply -f synq-dwh-example.yaml
-```
-
-⚠️ **Note**: When using direct deployment, you'll need to manually redeploy when configuration changes as checksums won't update automatically.
-
-## Post-Deployment Verification
-
-After deployment, verify everything is working correctly:
-
-```bash
-# Check deployment status
-kubectl get deployments
-
-# Check pods status
-kubectl get pods
-
-# View logs
+kubectl -n synq get deployments
+kubectl -n synq get pods
 kubectl -n synq logs -l deployment=synq-dwh
 ```
 
-## Configuration Guide
+## Agent configuration
 
-### Agent Configuration (`agent.yaml`)
+The agent reads its configuration from `agent.yaml`. The schema is documented here:
 
-The agent is configured via `agent.yaml` files located in each overlay directory. The configuration schema is documented at:
+- Schema documentation: https://schemas.synq.io/synq-dwh/v1/config.html
+- JSON Schema: https://schemas.synq.io/synq-dwh/v1/config.schema.json
 
-- **Schema documentation**: https://schemas.synq.io/synq-dwh/v1/config.html
-- **JSON Schema**: https://schemas.synq.io/synq-dwh/v1/config.schema.json
-
-To enable autocompletion and validation in your editor, add this comment at the top of your `agent.yaml`:
+For autocompletion and validation in your editor, add this line at the top of `agent.yaml`:
 
 ```yaml
 # yaml-language-server: $schema=https://schemas.synq.io/synq-dwh/v1/config.schema.json
 ```
 
-An overlay's `agent.yaml` replaces the base file as a whole, it is not merged
-with it. The agent reads `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET` from the
-environment, so an overlay `agent.yaml` without a `synq` section still authenticates.
+An overlay's `agent.yaml` replaces `base/agent.yaml` as a whole. Kustomize does not merge the two files. The agent reads `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET` from the environment, so an overlay `agent.yaml` does not need a `synq` section.
 
-### Supported Connections
+The example overlay sets `disableNameSuffixHash: true`, so a change to `agent.yaml` or `agent.env` does not restart the pod. After a change, restart the deployment:
 
-PostgreSQL, MySQL, BigQuery, ClickHouse, Snowflake, Redshift, Databricks, Trino,
-SQL Server, Oracle, Amazon Athena, Microsoft Fabric and IBM Db2 (Linux, UNIX and
-Windows). The schema documentation lists the fields of each type.
+```bash
+kubectl -n synq rollout restart deployment/example-synq-dwh-deployment
+```
 
-**BigQuery without a key**: instead of a service account key, a BigQuery connection
-can set `impersonate_service_accounts`. The agent starts from the pod's Application
-Default Credentials (for example a GKE workload identity) and impersonates the listed
-service accounts in order. Each one must grant `roles/iam.serviceAccountTokenCreator`
-to the identity before it. A connection with no credential at all uses the
-Application Default Credentials directly. This needs v0.8.0 or later.
+Use your own name prefix instead of `example-`.
+
+### Supported connections
+
+The agent connects to PostgreSQL, MySQL, BigQuery, ClickHouse, Snowflake, Redshift, Databricks, Trino, SQL Server, Oracle, Amazon Athena, Microsoft Fabric and IBM Db2 (Linux, UNIX and Windows). The schema documentation lists the fields of each connection type.
+
+### BigQuery without a key
+
+A BigQuery connection can use `impersonate_service_accounts` instead of a service account key. The agent starts with the Application Default Credentials of the pod, for example a GKE workload identity. Then it impersonates the listed service accounts in order. Each service account must grant `roles/iam.serviceAccountTokenCreator` to the identity before it. If a connection has no credentials, the agent uses the Application Default Credentials directly. This needs v0.8.0 or later.
 
 ```yaml
 connections:
@@ -129,32 +116,26 @@ connections:
         - reader@my-project.iam.gserviceaccount.com
 ```
 
-**SQL Server with Kerberos**: `integrated_auth: true` on an `mssql` connection signs
-in as the user that runs the agent, with the `kinit` Kerberos ticket on Linux. This
-needs v0.8.0 or later.
+### SQL Server with Kerberos
 
-### Environment Variables
+If an `mssql` connection sets `integrated_auth: true`, the agent signs in as the user that runs it. On Linux, the agent uses the Kerberos ticket from `kinit`. This needs v0.8.0 or later.
 
-Environment variables are managed in two places:
+## Environment variables
 
-- Base configuration: `base/agent.env`
-- Environment-specific variables: Located in respective overlay directories
+The Secret gets its values from two files:
 
-The agent authenticates with `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET`,
-created under Settings → API in your workspace. The older `SYNQ_CLIENT_ID` and
-`SYNQ_CLIENT_SECRET` are still read, so an existing deployment does not have to
-change; new ones should use the names above.
+- `base/agent.env` declares `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET` with empty values.
+- The overlay's `agent.env` sets the real values. Kustomize merges it with the base file key by key.
 
-### Resource Configuration
+The agent still reads the older names `SYNQ_CLIENT_ID` and `SYNQ_CLIENT_SECRET`, so you do not have to change an existing deployment. For a new deployment, use the `QUALITY_` names.
 
-Resource limits and requests can be adjusted in:
+## Resources
 
-- Base deployment: `base/deployment.yaml`
-- Environment-specific: In respective overlay's patch files
+`base/deployment.yaml` does not set resource requests or limits. To set them, add a patch to your overlay. `overlays/synq-staging/patch-version.yaml` is an example of a deployment patch.
 
-### Container Image Auto-Updates
+## Automatic image updates
 
-We recommend using an auto-update tool to keep your agent deployment current with the latest container versions. The agent deployment includes annotations to work with [Keel.sh](https://keel.sh/docs/) by default:
+The deployment has annotations for [Keel](https://keel.sh/docs/). Keel checks the registry every 5 minutes and installs new minor and patch versions:
 
 ```yaml
 annotations:
@@ -163,58 +144,38 @@ annotations:
   keel.sh/pollSchedule: "@every 5m"
 ```
 
-#### Keel.sh (Recommended)
-- **Simple setup**: Deploy as a single Kubernetes deployment
-- **Annotation-based**: Configure updates directly in deployment manifests
-- **Flexible policies**: Support for major, minor, patch, and force update policies
-- **Multiple triggers**: Poll, webhook, and approval-based updates
+To install Keel, run `kubectl apply -f keel.yaml`. The basic auth of Keel uses the user `admin` and the password `password`. Change them in `keel-values.yaml` and run `./keel.sh` to build `keel.yaml` again.
 
-#### Alternative Auto-Update Tools
+If you use GitOps, you can use [FluxCD image automation](https://fluxcd.io/flux/guides/image-update/) or [Argo CD Image Updater](https://argocd-image-updater.readthedocs.io/) instead. These tools write the new image version to your Git repository.
 
-**GitOps-Based Solutions:**
-- **FluxCD with Image Automation**: Automatically updates Git repositories when new images are available, following GitOps principles
-- **ArgoCD Image Updater**: Updates ArgoCD applications with new container images while maintaining Git-based configuration
+## Troubleshooting
 
-Choose based on your workflow: GitOps-based solutions (FluxCD/ArgoCD) for production environments with full Git-based configuration management.
-
-## Troubleshooting Guide
-
-If you encounter issues, follow these steps:
-
-1. **Check Pod Status**
+1. Check the status of the pod:
 
    ```bash
-   kubectl describe pod <pod-name>
+   kubectl -n synq describe pod <pod-name>
    ```
 
-2. **View Logs**
+2. Read the logs:
 
    ```bash
-   kubectl logs <pod-name>
+   kubectl -n synq logs <pod-name>
    ```
 
-3. **Verify Configurations**
+3. Check the configuration that the pod uses:
+
    ```bash
-   kubectl get configmap
-   kubectl describe configmap
+   kubectl -n synq describe configmap
    ```
 
-## Cleanup Instructions
+If the problem continues, contact Coalesce Quality support: https://docs.synq.io/support/support
 
-To remove the deployment:
+## Remove the deployment
 
 ```bash
-# Using Kustomize
+# With Kustomize
 kubectl delete -k overlays/example
 
-# OR direct deployment
+# OR with the generated file
 kubectl delete -f synq-dwh-example.yaml
 ```
-
-## Need Help?
-
-If you encounter any issues or need assistance:
-
-1. Check the troubleshooting section above
-2. Review the logs using `kubectl logs`
-3. Contact Coalesce Quality support: https://docs.synq.io/support/support
