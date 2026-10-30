@@ -1,77 +1,57 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file gives instructions to Claude Code (claude.ai/code) for this repository.
 
-## Repository Overview
+## Repository overview
 
-This repository contains Kubernetes deployment configurations for the Coalesce Quality data warehouse agent. It uses Kustomize for managing environment-specific configurations with a base/overlays pattern.
+This repository deploys the Coalesce Quality data warehouse agent on Kubernetes. It uses Kustomize with a base and overlays. The repository is public. Do not put customer names or real credentials in it.
 
-## Architecture
+## Layout
 
-- **Base Configuration** (`base/`): Contains core Kubernetes resources (deployment, configMap, secrets) that are shared across all environments
-- **Overlays** (`overlays/`): Environment-specific configurations that customize the base:
-  - `example/`: Example configuration for testing/development
-  - `synq-staging/`: Staging environment (dev- prefix, custom namespace `synq-dwh-dev`)
-- **Kustomize Pattern**: Uses `configMapGenerator` and `secretGenerator` to create ConfigMaps/Secrets from `agent.yaml` and `agent.env` files
-- **Automatic Updates**: The deployment has keel.sh annotations configured for automatic minor version updates via polling every 5 minutes
+- `base/`: The resources that all overlays share. These are the deployment, the ConfigMap generator and the Secret generator.
+- `overlays/example/`: The example overlay. It uses the `example-` name prefix and the `synq` namespace.
+- `overlays/synq-staging/`: The staging overlay. It uses the `dev-` name prefix and the `synq-dwh-dev` namespace.
+- `synq-dwh-example.yaml`: The example overlay, built into one file by `./build.sh`.
+- `keel.yaml`: The Keel deployment, built from `keel-values.yaml` and `keel-template.yaml` by `./keel.sh`.
 
-## Key Configuration Files
+## Configuration files
 
-- `base/deployment.yaml`: Main deployment definition with volume mounts for agent config
-- `base/agent.env`: Base environment variables (secrets like POSTGRES_PASSWORD, QUALITY_CLIENT_ID, QUALITY_CLIENT_SECRET)
-- `overlays/*/agent.yaml`: Agent configuration file mounted at `/opt/synq-dwh/`
-- `overlays/*/agent.env`: Environment-specific secrets that override/extend base secrets
+- `base/deployment.yaml`: The agent deployment. It mounts the agent configuration at `/opt/synq-dwh/`.
+- `base/agent.yaml`: The default agent configuration.
+- `base/agent.env`: It declares `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET` with empty values. The overlay sets the real values.
+- `overlays/*/agent.yaml`: The agent configuration of the overlay. It replaces `base/agent.yaml` as a whole. Kustomize does not merge the two files.
+- `overlays/*/agent.env`: The secrets of the overlay. Kustomize merges them with `base/agent.env` key by key.
 
-## Common Commands
+The `example` overlay sets `disableNameSuffixHash: true`. Thus a change to the ConfigMap or the Secret does not restart the pod.
 
-### Build and Deploy
+## Commands
 
 ```bash
-
-# Deploy using Kustomize (recommended)
+# Deploy with Kustomize
 kubectl apply -k overlays/example
 kubectl apply -k overlays/synq-staging
 
-# Deploy using generated YAML
-# Build kustomization and output to synq-dwh-example.yaml
+# Build synq-dwh-example.yaml, then deploy it
 ./build.sh
 kubectl apply -f synq-dwh-example.yaml
-```
 
-### Local Testing
-
-```bash
-# Test configuration locally with docker-compose (NOT for production)
+# Test the configuration locally. Do not use this in production.
 docker-compose up
-```
 
-**Note**: `docker-compose.yml` is explicitly marked for development/testing only to validate configuration changes.
+# Verify the deployment
+kubectl -n synq get deployments
+kubectl -n synq get pods
+kubectl -n synq logs -l deployment=synq-dwh
 
-### Verification
-
-```bash
-# Check deployment status
-kubectl get deployments -n synq
-
-# Check pods
-kubectl get pods -n synq
-
-# View logs
-kubectl logs -l deployment=synq-dwh -n synq
-```
-
-### Cleanup
-
-```bash
-# Remove deployment
+# Remove the deployment
 kubectl delete -k overlays/example
-# OR
-kubectl delete -f synq-dwh-example.yaml
 ```
 
-## Important Notes
+## Image versions
 
-- Each overlay uses `namePrefix` to distinguish resources (e.g., `example-`, `dev-`)
-- The `example` overlay uses `disableNameSuffixHash: true` to keep ConfigMap/Secret names stable
-- Container image is pulled from `europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh`
-- Secrets are stored in `agent.env` files and should never be committed with real credentials in example overlays
+- The image is `europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh`.
+- The `upgrade-version.yaml` workflow opens a PR when the registry has a new stable version.
+- `scripts/check-and-update-version.sh` changes `base/deployment.yaml` when you run it. It has no dry run and no `--help`.
+- If you change the image version, run `./build.sh` to update `synq-dwh-example.yaml`.
+- The release notes are the `synq-dwh-v*` releases in the private `getsynq/cloud` repository. Read them before you change the image version. Do not link them from this repository.
+- The connection fields are defined in `yamlconfig/types.go` in `getsynq/dwhsupport`. The published schema at https://schemas.synq.io/synq-dwh/v1/config.schema.json can be older than the code.
