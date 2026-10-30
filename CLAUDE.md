@@ -18,9 +18,9 @@ This repository contains Kubernetes deployment configurations for the Coalesce Q
 ## Key Configuration Files
 
 - `base/deployment.yaml`: Main deployment definition with volume mounts for agent config
-- `base/agent.env`: Base environment variables (secrets like POSTGRES_PASSWORD, QUALITY_CLIENT_ID, QUALITY_CLIENT_SECRET)
-- `overlays/*/agent.yaml`: Agent configuration file mounted at `/opt/synq-dwh/`
-- `overlays/*/agent.env`: Environment-specific secrets that override/extend base secrets
+- `base/agent.env`: Base environment variables. It declares `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET` with empty values, so the overlay sets the real ones.
+- `overlays/*/agent.yaml`: Agent configuration file mounted at `/opt/synq-dwh/`. It replaces `base/agent.yaml` as a whole, it is not merged with it.
+- `overlays/*/agent.env`: Environment-specific secrets. They are merged key by key with `base/agent.env`.
 
 ## Common Commands
 
@@ -74,4 +74,6 @@ kubectl delete -f synq-dwh-example.yaml
 - Each overlay uses `namePrefix` to distinguish resources (e.g., `example-`, `dev-`)
 - The `example` overlay uses `disableNameSuffixHash: true` to keep ConfigMap/Secret names stable
 - Container image is pulled from `europe-docker.pkg.dev/synq-cicd-public/synq-public/synq-dwh`
+- Release notes are the `synq-dwh-v*` releases in the private `getsynq/cloud` repository. Read them before you bump the image. Do not link them from this public repository.
+- The connection fields are defined in `yamlconfig/types.go` in `getsynq/dwhsupport`. The published schema at https://schemas.synq.io/synq-dwh/v1/config.schema.json can be behind it.
 - Secrets are stored in `agent.env` files and should never be committed with real credentials in example overlays

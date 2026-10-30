@@ -83,7 +83,7 @@ kubectl get deployments
 kubectl get pods
 
 # View logs
-kubectl logs -l app=synq-dwh
+kubectl -n synq logs -l deployment=synq-dwh
 ```
 
 ## Configuration Guide
@@ -100,6 +100,38 @@ To enable autocompletion and validation in your editor, add this comment at the 
 ```yaml
 # yaml-language-server: $schema=https://schemas.synq.io/synq-dwh/v1/config.schema.json
 ```
+
+An overlay's `agent.yaml` replaces the base file as a whole, it is not merged
+with it. The agent reads `QUALITY_CLIENT_ID` and `QUALITY_CLIENT_SECRET` from the
+environment, so an overlay `agent.yaml` without a `synq` section still authenticates.
+
+### Supported Connections
+
+PostgreSQL, MySQL, BigQuery, ClickHouse, Snowflake, Redshift, Databricks, Trino,
+SQL Server, Oracle, Amazon Athena, Microsoft Fabric and IBM Db2 (Linux, UNIX and
+Windows). The schema documentation lists the fields of each type.
+
+**BigQuery without a key**: instead of a service account key, a BigQuery connection
+can set `impersonate_service_accounts`. The agent starts from the pod's Application
+Default Credentials (for example a GKE workload identity) and impersonates the listed
+service accounts in order. Each one must grant `roles/iam.serviceAccountTokenCreator`
+to the identity before it. A connection with no credential at all uses the
+Application Default Credentials directly. This needs v0.8.0 or later.
+
+```yaml
+connections:
+  "bigquery":
+    name: "BigQuery"
+    bigquery:
+      project_id: my-project
+      region: EU
+      impersonate_service_accounts:
+        - reader@my-project.iam.gserviceaccount.com
+```
+
+**SQL Server with Kerberos**: `integrated_auth: true` on an `mssql` connection signs
+in as the user that runs the agent, with the `kinit` Kerberos ticket on Linux. This
+needs v0.8.0 or later.
 
 ### Environment Variables
 
